@@ -175,6 +175,42 @@ button{font:inherit;color:inherit;cursor:pointer}
 .install b{display:block;font-size:14px}
 .install span{color:var(--muted)}
 .install button{margin-left:auto;background:none;border:0;color:var(--muted);font-size:18px;padding:4px}
+/* targets, wins, history, backup */
+.row .last .tg{display:block;color:var(--accent-ink);font-size:15px;font-weight:700}
+.row .last .tg.up::before{content:"↑ "}
+.target span.tgt{background:transparent;border-color:var(--accent);color:var(--accent-ink)}
+.wins{text-align:left;margin:0 0 18px;display:flex;flex-direction:column;gap:6px}
+.win{display:flex;gap:10px;align-items:center;background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600}
+.win i{font-style:normal;flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:13px;font-weight:800}
+.win.big{background:var(--accent);color:var(--on-accent)}
+.win.big i{background:var(--on-accent);color:var(--accent)}
+.kpis.k4{grid-template-columns:repeat(4,1fr)}
+.kpis.k4 b{font-size:28px}
+.kpis.k4 .kpi{padding:12px 10px}
+.hrow{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.hrow .dt{width:44px;flex:none;text-align:center;line-height:1}
+.hrow .dt b{display:block;font-size:24px;font-weight:800}
+.hrow .dt small{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.hrow .t{flex:1;min-width:0}
+.hrow .t b{display:block;font-weight:700}
+.hrow .t small{color:var(--muted);font-size:12px}
+.hrow .w{font-size:12px;font-weight:700;color:var(--accent-ink);white-space:nowrap}
+.card.scroll{max-height:86vh;overflow:auto;text-align:left}
+.hx{margin:14px 0 6px;font-weight:700;font-size:14px}
+.hset{display:grid;grid-template-columns:28px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px}
+.hset span{color:var(--muted);font-weight:800;text-align:center}
+.hset input{height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:600 16px Inter,system-ui,sans-serif;text-align:center;width:100%}
+.btnrow{display:flex;gap:8px;margin-top:16px}
+.btnrow button{flex:1;border-radius:12px;padding:12px;font-weight:700;border:1px solid var(--line);background:var(--surface-2)}
+.btnrow .pri{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btnrow .del{color:var(--danger)}
+.bk{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:8px}
+.bk p{margin:0 0 10px;color:var(--muted);font-size:13px}
+.bk p b{color:var(--text)}
+.nudge{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px dashed var(--accent);border-radius:14px;padding:10px 12px;margin-bottom:14px;font-size:13px}
+.nudge span{flex:1;color:var(--muted)}
+.nudge span b{color:var(--text)}
+.nudge button{border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);font-weight:800;padding:8px 12px;font-size:13px}
 @media (max-width:380px){ .hero h1{font-size:54px} .p-body h2{font-size:38px} .sethead,.set{grid-template-columns:36px 1fr 1fr 1fr 46px;gap:6px} }
 </style>
 </head>
@@ -197,6 +233,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
   <!-- WORKOUT VIEW -->
   <section id="vHome">
+    <div class="nudge" id="nudge" hidden><span id="nudgeTxt"></span><button id="nudgeBtn">Back up</button></div>
     <div class="week" id="week"></div>
     <div class="hero">
       <div class="eyebrow" id="hEyebrow"></div>
@@ -210,15 +247,23 @@ button{font:inherit;color:inherit;cursor:pointer}
       </div>
     </div>
     <div class="chips" id="chips"></div>
-    <div class="sec"><h2 class="d">Exercises</h2><span>Last time</span></div>
+    <div class="sec"><h2 class="d">Exercises</h2><span>Today's target</span></div>
     <div id="list"></div>
   </section>
 
   <!-- PROGRESS VIEW -->
   <section id="vProg" hidden>
     <div class="sec" style="margin-top:4px"><h2 class="d">Progress</h2><span id="since"></span></div>
-    <div class="kpis" id="kpis"></div>
+    <div class="kpis k4" id="kpis"></div>
+    <div class="sec"><h2 class="d">History</h2><span>Tap to view or fix</span></div>
+    <div id="hlist"></div>
     <div id="plist"></div>
+    <div class="sec"><h2 class="d">Backup</h2><span></span></div>
+    <div class="bk">
+      <p id="bkTxt"></p>
+      <div class="btnrow" style="margin-top:0"><button class="pri" id="bkBtn">Back up now</button><button id="rsBtn">Restore</button></div>
+      <input type="file" id="rsFile" accept="application/json,.json" hidden>
+    </div>
     <div style="margin-top:22px;display:flex;justify-content:center"><button class="ghost" id="wipe">Clear all logged data</button></div>
   </section>
 </div>
@@ -257,9 +302,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 <div class="modal" id="summary"><div class="card">
   <div class="eyebrow">Workout complete</div>
   <h3 class="d" id="sTitle">Nice work</h3>
+  <div class="wins" id="sWins"></div>
   <div class="kpis" id="sKpis"></div>
   <button class="cta d" id="sDone">Done</button>
 </div></div>
+
+<div class="modal" id="hModal"><div class="card scroll" id="hCard"></div></div>
 
 <div class="toast d" id="toast"></div>
 
@@ -336,6 +384,41 @@ const topSet = sets => sets.reduce((b,s) => (!b || e1(s.w,s.r) > e1(b.w,b.r)) ? 
 const bestE = k => Math.max(0, ...(log[k]||[]).flatMap(x => x.sets.map(s => e1(s.w,s.r))));
 const setTxt = s => s ? (+s.w ? s.w+" × "+s.r : s.r+" reps") : "—";
 const estMin = p => Math.round(5 + p.ex.reduce((m,e) => m + e.s*(45+e.rest), 0)/60);
+let hist = store.get("ppl-hist", {});        // { "2026-09-25": {day, mins, wins:[...]} }
+const prevEntry = k => { const h = (log[k]||[]).filter(x => x.d !== dateKey); return h.length ? h[h.length-1] : null; };
+const rng = r => { const m = String(r).match(/(\d+)\D+(\d+)/); const n = parseInt(r,10) || 8; return m ? [+m[1], +m[2]] : [n, n]; };
+const INC = () => unit === "kg" ? 2.5 : 5;
+const vol = sets => sets.reduce((a,s) => a + (+s.w||0)*(+s.r||0), 0);
+
+/* Progressive-overload target from a previous session:
+   every set hit the top of the rep range -> add weight; otherwise -> one more rep. */
+function targetFor(e, entry){
+  const [lo, hi] = rng(e.r);
+  if(!entry || !entry.sets.length) return {kind:"new", text:"First time: find a weight for "+lo+"–"+hi, sets:[], head:null};
+  const S = entry.sets, topW = Math.max(...S.map(s => +s.w||0));
+  if(topW && S.length >= e.s && S.every(s => +s.r >= hi)){
+    const w = +(topW + INC()).toFixed(1);
+    return {kind:"up", text:"Go up: "+w+" × "+lo, head:{w, r:lo}, sets:Array.from({length:e.s}, () => ({w, r:lo}))};
+  }
+  const sets = Array.from({length:e.s}, (_,i) => { const p = S[i] || S[S.length-1]; return {w:+p.w||0, r:Math.min(hi, (+p.r||lo) + 1)}; });
+  const head = sets.find((s,i) => !S[i] || s.r > +S[i].r) || sets[0];
+  return {kind:"rep", text:"Beat it: "+setTxt(head), head, sets};
+}
+function hitTarget(e, t, sets){
+  if(t.kind === "new") return false;
+  return t.sets.filter((ts,i) => sets[i] && +sets[i].w >= ts.w && +sets[i].r >= ts.r).length >= e.s;
+}
+function dayVol(day, d){ return PLAN[day].ex.reduce((a,e) => { const x = (log[e.k]||[]).find(y => y.d === d); return a + (x ? vol(x.sets) : 0); }, 0); }
+function weekStart(off){ const m = new Date(now); m.setDate(now.getDate() - dow - 7*(off||0)); return localDate(m); }
+function streakWeeks(){
+  const dates = Object.keys(done); let n = 0;
+  for(let w=0; w<52; w++){
+    const a = weekStart(w), b = w ? weekStart(w-1) : "9999";
+    const c = dates.filter(d => d >= a && d < b).length;
+    if(c >= 3) n++; else if(w > 0) break;
+  }
+  return n;
+}
 
 /* ---------- home ---------- */
 function renderHome(){
@@ -371,11 +454,19 @@ function renderHome(){
 
   let h = '<div class="row warm"><div class="i d">0</div><div class="t"><b>Warm-up</b><small>5 min cardio + 2–3 light ramp-up sets</small></div></div>';
   p.ex.forEach((e,i) => {
-    const le = lastEntry(e.k), ts = le && topSet(le.sets);
+    const le = lastEntry(e.k), ts = le && topSet(le.sets), t = targetFor(e, le);
     h += '<div class="row"><div class="i d">'+(i+1)+'</div><div class="t"><b>'+esc(e.n)+'</b><small>'+e.s+' × '+esc(e.r)+' · '+esc(e.g)+'</small></div>'+
-         '<div class="last"><b>'+setTxt(ts)+'</b>'+(ts && +ts.w ? unit : "")+'</div></div>';
+         '<div class="last">'+(t.head ? '<span class="tg'+(t.kind==="up"?" up":"")+'">'+setTxt(t.head)+'</span>last '+setTxt(ts) : '<span class="tg">New</span>set a baseline')+'</div></div>';
   });
   $("#list").innerHTML = h;
+  renderNudge();
+}
+function renderNudge(){
+  const n = Object.keys(done).length, lb = store.get("ppl-lastbackup", 0);
+  const since = Object.keys(done).filter(d => !lb || d >= localDate(new Date(lb))).length;
+  const show = n >= 2 && since >= 2 && (!lb || Date.now()-lb > 14*864e5);
+  $("#nudge").hidden = !show;
+  if(show) $("#nudgeTxt").innerHTML = "<b>"+since+" workouts</b> aren't backed up yet";
 }
 $("#startBtn").onclick = () => {
   if(!sess || sess.day!==sel){
@@ -391,14 +482,22 @@ function renderProg(){
   const dates = Object.keys(done).sort();
   const monday = new Date(now); monday.setDate(now.getDate()-dow);
   const thisWeek = dates.filter(d => d >= localDate(monday)).length;
-  let streak = 0; // consecutive weeks with >= 3 workouts, counting back from last full or current week
-  for(let w=0; w<52; w++){
-    const a = new Date(monday); a.setDate(monday.getDate()-7*w); const b = new Date(a); b.setDate(a.getDate()+7);
-    const n = dates.filter(d => d >= localDate(a) && d < localDate(b)).length;
-    if(n>=3) streak++; else if(w>0) break;
-  }
+  const winsTotal = Object.values(hist).reduce((a,x) => a + (x.wins||[]).length, 0);
   $("#since").textContent = dates.length ? "Since "+new Date(dates[0]+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"}) : "";
-  $("#kpis").innerHTML = [[thisWeek+"/3","This week"],[dates.length,"Workouts"],[streak,"Week streak"]].map(([b,s]) => '<div class="kpi"><b class="d">'+b+'</b><span>'+s+'</span></div>').join("");
+  $("#kpis").innerHTML = [[thisWeek+"/3","Week"],[dates.length,"Workouts"],[winsTotal,"Wins"],[streakWeeks(),"Streak"]].map(([b,s]) => '<div class="kpi"><b class="d">'+b+'</b><span>'+s+'</span></div>').join("");
+
+  $("#hlist").innerHTML = dates.length ? dates.slice().reverse().map(d => {
+    const day = done[d], dt = new Date(d+"T12:00"), x = hist[d] || {};
+    const sets = PLAN[day].ex.reduce((a,e) => { const en = (log[e.k]||[]).find(y => y.d === d); return a + (en ? en.sets.length : 0); }, 0);
+    const w = (x.wins||[]).length;
+    return '<button class="hrow" data-d="'+d+'"><div class="dt"><b class="d">'+dt.getDate()+'</b><small>'+dt.toLocaleDateString(undefined,{month:"short"})+'</small></div>'+
+      '<div class="t"><b>'+PLAN[day].title+' day</b><small>'+dt.toLocaleDateString(undefined,{weekday:"short"})+' · '+sets+' sets · '+Math.round(dayVol(day,d)).toLocaleString()+' '+unit+(x.mins?' · '+x.mins+' min':'')+'</small></div>'+
+      (w ? '<span class="w">'+w+' win'+(w>1?'s':'')+'</span>' : '')+'</button>';
+  }).join("") : '<div class="empty">Your finished workouts will show up here.</div>';
+  $("#hlist").querySelectorAll(".hrow").forEach(b => b.onclick = () => openHist(b.dataset.d));
+
+  const lb = store.get("ppl-lastbackup", 0);
+  $("#bkTxt").innerHTML = "Your history only lives in this app. Save a backup to <b>iCloud Drive</b> (Share → Save to Files) so a new phone or a deleted app doesn't wipe it.<br>Last backup: <b>"+(lb ? agoTxt(lb) : "never")+"</b>";
   let h = "";
   Object.keys(PLAN).forEach(k => {
     h += '<div class="sec"><h2 class="d">'+PLAN[k].title+'</h2><span>Best set · trend</span></div>';
@@ -423,7 +522,7 @@ function spark(pts){
 }
 $("#wipe").onclick = () => {
   if(!confirm("Delete all logged sets, notes and history on this device?")) return;
-  log = {}; done = {}; notes = {}; ["ppl-log","ppl-done","ppl-notes"].forEach(store.del); renderAll();
+  log = {}; done = {}; notes = {}; hist = {}; ["ppl-log","ppl-done","ppl-notes","ppl-hist"].forEach(store.del); renderAll();
 };
 
 /* ---------- nav ---------- */
@@ -453,19 +552,19 @@ $("#pClose").onclick = closePlayer;
 
 function renderPlayer(){
   const p = PLAN[sess.day], e = p.ex[sess.i], cur = sess.sets[sess.i] || (sess.sets[sess.i] = []);
-  const le = lastEntry(e.k);
+  const le = prevEntry(e.k), t = targetFor(e, le), [lo] = rng(e.r);
   $("#segs").innerHTML = p.ex.map((x,j) => { const n = (sess.sets[j]||[]).filter(s=>s&&s.done).length; return '<i class="'+(j===sess.i?'cur':'')+'"><b style="width:'+(n/x.s*100)+'%"></b></i>'; }).join("");
   $("#pCount").textContent = PLAN[sess.day].title.toUpperCase()+" · "+(sess.i+1)+" / "+p.ex.length;
   let h = '<div class="eyebrow">'+esc(e.g)+'</div><h2 class="d">'+esc(e.n)+'</h2>'+
-    '<div class="target"><span class="hi">'+e.s+' × '+esc(e.r)+'</span><span>Rest '+fmtT(e.rest)+'</span><span>1–2 reps in reserve</span></div>'+
+    '<div class="target"><span class="hi">'+(t.kind==="up"?"↑ ":"")+esc(t.text)+'</span><span>'+e.s+' × '+esc(e.r)+'</span><span>Rest '+fmtT(e.rest)+'</span></div>'+
     (e.tip ? '<p class="cue">'+esc(e.tip)+'</p>' : '')+
     '<div class="p-links"><a href="'+FORM_GUIDE+sess.day+'" target="_blank" rel="noopener">Form guide ↗</a><a href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.n+" proper form")+'" target="_blank" rel="noopener">Watch demo ↗</a></div>'+
     '<div class="sethead"><span style="text-align:center">Set</span><span style="text-align:center">Last</span><span style="text-align:center">'+unit+'</span><span style="text-align:center">Reps</span><span></span></div>';
   for(let s=0; s<e.s; s++){
-    const c = cur[s] || {}, pv = le && le.sets[s];
+    const c = cur[s] || {}, pv = le && le.sets[s], ts = t.sets[s];
     h += '<div class="set'+(c.done?' done':'')+'" data-s="'+s+'"><div class="sn d">'+(s+1)+'</div><div class="prev">'+(pv ? setTxt(pv) : "—")+'</div>'+
-      '<input inputmode="decimal" data-f="w" aria-label="Set '+(s+1)+' weight" value="'+esc(c.w ?? "")+'" placeholder="'+esc(pv && +pv.w ? pv.w : unit)+'">'+
-      '<input inputmode="numeric" data-f="r" aria-label="Set '+(s+1)+' reps" value="'+esc(c.r ?? "")+'" placeholder="'+esc(pv ? pv.r : lowRep(e.r))+'">'+
+      '<input inputmode="decimal" data-f="w" aria-label="Set '+(s+1)+' weight" value="'+esc(c.w ?? "")+'" placeholder="'+esc(ts && ts.w ? ts.w : unit)+'">'+
+      '<input inputmode="numeric" data-f="r" aria-label="Set '+(s+1)+' reps" value="'+esc(c.r ?? "")+'" placeholder="'+esc(ts ? ts.r : lo)+'">'+
       '<button class="ck" aria-label="Log set '+(s+1)+'" aria-pressed="'+!!c.done+'"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>';
   }
   h += '<textarea class="notes" id="exNote" placeholder="Notes for next time (seat height, grip, how it felt)…">'+esc(notes[e.k]||"")+'</textarea>';
@@ -485,11 +584,15 @@ function logSet(s, row){
   if(c.done){ c.done = false; saveSess(); renderPlayer(); return; }
   const [wi, ri] = row.querySelectorAll("input");
   const num = el => { const v = parseFloat(el.value || el.placeholder); return isNaN(v) ? 0 : v; };
+  if(!prevEntry(e.k) && !wi.value.trim()){ wi.focus(); return; }   // first time: need a real weight
   c.w = String(num(wi)); c.r = String(num(ri) || lowRep(e.r));
   if(!(+c.r)){ ri.focus(); return; }
   const prior = Math.max(bestE(e.k), ...cur.filter((x,j) => x && x.done && j!==s).map(x => e1(x.w,x.r)));
   c.done = true;
-  if((log[e.k]||[]).length && +c.w && e1(c.w,c.r) > prior + 0.01){ sess.prs++; toast("New PR · "+c.w+" × "+c.r); }
+  const t = targetFor(e, prevEntry(e.k)), doneSets = cur.filter(x => x && x.done);
+  sess.hit = sess.hit || {};
+  if((log[e.k]||[]).some(x => x.d !== dateKey) && +c.w && e1(c.w,c.r) > prior + 0.01){ sess.prs++; toast("New PR · "+c.w+" × "+c.r); }
+  else if(!sess.hit[sess.i] && hitTarget(e, t, doneSets)){ sess.hit[sess.i] = true; toast("Target hit ✓"); }
   saveSess(); renderPlayer();
   const remaining = cur.filter(x=>x&&x.done).length < e.s;
   const lastEx = sess.i === p.ex.length-1;
@@ -531,26 +634,131 @@ function beep(){
 }
 
 /* ---------- finish ---------- */
+/* Small wins: compare this session against everything logged before today. Called BEFORE the log is written. */
+function computeWins(day, sessSets){
+  const p = PLAN[day], wins = [];
+  const MIL = unit === "kg" ? [40,60,80,100,120,140,160,180,200] : [95,135,185,225,275,315,365,405,455,495];
+  let sv = 0;
+  p.ex.forEach((e,j) => {
+    const sets = sessSets[j]; if(!sets.length) return;
+    const v = vol(sets); sv += v;
+    const prevH = (log[e.k]||[]).filter(x => x.d !== dateKey); if(!prevH.length) return;
+    const prevAll = prevH.flatMap(x => x.sets), top = topSet(sets);
+    const maxW = Math.max(...sets.map(s => s.w)), prevMaxW = Math.max(...prevAll.map(s => +s.w||0));
+    const mil = MIL.filter(m => maxW >= m && prevMaxW < m).pop();
+    if(mil) wins.push({p:0, m:"First "+mil+" "+unit+" "+e.n+"!"});
+    if(top.w && e1(top.w,top.r) > Math.max(...prevAll.map(s => e1(s.w,s.r))) + .01){ wins.push({p:1, m:"New PR on "+e.n+": "+top.w+" × "+top.r}); return; }
+    let rep = null;
+    sets.forEach(s => { const at = prevAll.filter(x => +x.w === s.w); if(!at.length) return; const d = s.r - Math.max(...at.map(x => +x.r)); if(d > 0 && (!rep || d > rep.d)) rep = {w:s.w, d}; });
+    if(rep){ wins.push({p:4, m:"+"+rep.d+" rep"+(rep.d>1?"s":"")+" at "+(rep.w ? rep.w+" "+unit : "bodyweight")+" on "+e.n}); return; }
+    if(hitTarget(e, targetFor(e, prevH[prevH.length-1]), sets)){ wins.push({p:5, m:"Hit your target on "+e.n}); return; }
+    const lv = vol(prevH[prevH.length-1].sets);
+    if(lv && v > lv) wins.push({p:6, m:"More volume on "+e.n+" (+"+Math.round((v/lv-1)*100)+"%)"});
+  });
+  const prevDays = Object.keys(done).filter(d => d !== dateKey && done[d] === day).sort();
+  if(!Object.keys(done).some(d => d !== dateKey)) wins.push({p:2, m:"First workout logged. The hardest one's done."});
+  else if(prevDays.length){
+    const best = Math.max(...prevDays.map(d => dayVol(day, d))), last = dayVol(day, prevDays[prevDays.length-1]);
+    if(sv > best) wins.push({p:3, m:"Biggest "+p.title+" day yet: "+Math.round(sv).toLocaleString()+" "+unit});
+    else if(last && sv > last) wins.push({p:3, m:"+"+Math.round((sv/last-1)*100)+"% volume vs last "+p.title+" day"});
+  }
+  const wk = Object.keys(done).filter(d => d >= weekStart(0) && d !== dateKey).length + 1;
+  if(wk === 3) wins.push({p:2, m:"3 for 3 this week"});
+  return wins.sort((a,b) => a.p - b.p).map(w => w.m);
+}
 function finish(){
   const p = PLAN[sess.day];
-  let setsDone = 0, vol = 0;
+  const sessSets = p.ex.map((e,j) => (sess.sets[j]||[]).filter(x => x && x.done).map(x => ({w:+x.w||0, r:+x.r||0})));
+  const setsDone = sessSets.reduce((a,s) => a + s.length, 0), total = sessSets.reduce((a,s) => a + vol(s), 0);
+  if(!setsDone && !confirm("No sets logged yet. End the workout anyway?")) return;
+  const wins = setsDone ? computeWins(sess.day, sessSets) : [];
   p.ex.forEach((e,j) => {
-    const sets = (sess.sets[j]||[]).filter(x => x && x.done).map(x => ({w:+x.w||0, r:+x.r||0}));
-    if(!sets.length) return;
-    setsDone += sets.length; vol += sets.reduce((a,x) => a + x.w*x.r, 0);
+    const sets = sessSets[j]; if(!sets.length) return;
     const h = log[e.k] || (log[e.k] = []);
     if(h.length && h[h.length-1].d === dateKey) h[h.length-1] = {d:dateKey, sets}; else h.push({d:dateKey, sets});
   });
-  if(!setsDone && !confirm("No sets logged yet. End the workout anyway?")) return;
-  if(setsDone){ done[dateKey] = sess.day; store.set("ppl-done", done); store.set("ppl-log", log); }
-  const mins = Math.round((Date.now()-sess.start)/60000), prs = sess.prs;
+  const mins = Math.round((Date.now()-sess.start)/60000), prs = wins.filter(w => w.startsWith("New PR")).length;
+  if(setsDone){
+    done[dateKey] = sess.day;
+    const streak = streakWeeks(); if(streak >= 2 && wins.includes("3 for 3 this week")) wins.push(streak+"-week streak");
+    hist[dateKey] = {day:sess.day, mins, wins};
+    store.set("ppl-done", done); store.set("ppl-log", log); store.set("ppl-hist", hist);
+  }
   sess = null; store.del("ppl-session"); closePlayer();
   if(!setsDone) return;
-  $("#sTitle").textContent = p.title + " done";
+  $("#sTitle").textContent = wins.length ? wins.length+" win"+(wins.length>1?"s":"")+" today" : p.title+" done";
+  $("#sWins").innerHTML = wins.map((w,i) => '<div class="win'+(i===0 && /PR|First \d/.test(w) ? ' big' : '')+'"><i>✓</i>'+esc(w)+'</div>').join("") ||
+    '<div class="win"><i>✓</i>Showed up and put in the work. That counts.</div>';
   $("#sKpis").innerHTML = [[setsDone,"Sets"],[mins,"Minutes"],[prs,"PRs"]].map(([b,s]) => '<div class="kpi"><b class="d">'+b+'</b><span>'+s+'</span></div>').join("") +
-    '<div class="kpi" style="grid-column:1/-1"><b class="d">'+Math.round(vol).toLocaleString()+' '+unit+'</b><span>Total volume</span></div>';
+    '<div class="kpi" style="grid-column:1/-1"><b class="d">'+Math.round(total).toLocaleString()+' '+unit+'</b><span>Total volume</span></div>';
   $("#summary").classList.add("open");
 }
+
+/* ---------- history detail / edit ---------- */
+function openHist(d){
+  const day = done[d], x = hist[d] || {}, dt = new Date(d+"T12:00");
+  let h = '<div class="eyebrow">'+dt.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})+(x.mins?' · '+x.mins+' min':'')+'</div><h3 class="d" style="font-size:40px;margin:6px 0 10px">'+PLAN[day].title+' day</h3>';
+  if((x.wins||[]).length) h += '<div class="wins">'+x.wins.map(w => '<div class="win"><i>✓</i>'+esc(w)+'</div>').join("")+'</div>';
+  PLAN[day].ex.forEach(e => {
+    const en = (log[e.k]||[]).find(y => y.d === d); if(!en) return;
+    h += '<div class="hx">'+esc(e.n)+'</div>';
+    en.sets.forEach((s,i) => { h += '<div class="hset" data-k="'+e.k+'"><span>'+(i+1)+'</span><input inputmode="decimal" data-f="w" value="'+esc(s.w)+'" aria-label="'+esc(e.n)+' set '+(i+1)+' '+unit+'"><input inputmode="numeric" data-f="r" value="'+esc(s.r)+'" aria-label="'+esc(e.n)+' set '+(i+1)+' reps"></div>'; });
+  });
+  h += '<p style="color:var(--muted);font-size:12px;margin:10px 0 0">Columns: '+unit+' · reps. Clear the reps to remove a set.</p>'+
+    '<div class="btnrow"><button class="pri" id="hSave">Save</button><button id="hClose">Close</button></div>'+
+    '<div class="btnrow" style="margin-top:8px"><button class="del" id="hDel">Delete this workout</button></div>';
+  $("#hCard").innerHTML = h; $("#hModal").classList.add("open"); $("#hCard").scrollTop = 0;
+  $("#hClose").onclick = () => $("#hModal").classList.remove("open");
+  $("#hSave").onclick = () => {
+    const by = {};
+    $("#hCard").querySelectorAll(".hset").forEach(r => { const [w, rp] = r.querySelectorAll("input"); const reps = parseFloat(rp.value); if(reps > 0) (by[r.dataset.k] ||= []).push({w:parseFloat(w.value)||0, r:reps}); });
+    PLAN[day].ex.forEach(e => {
+      const h2 = log[e.k] || [], i = h2.findIndex(y => y.d === d); if(i < 0) return;
+      if(by[e.k]) h2[i] = {d, sets:by[e.k]}; else h2.splice(i, 1);
+    });
+    if(!PLAN[day].ex.some(e => (log[e.k]||[]).some(y => y.d === d))){ delete done[d]; delete hist[d]; }
+    store.set("ppl-log", log); store.set("ppl-done", done); store.set("ppl-hist", hist);
+    $("#hModal").classList.remove("open"); toast("Saved"); renderAll();
+  };
+  $("#hDel").onclick = () => {
+    if(!confirm("Delete this "+PLAN[day].title+" workout and its sets?")) return;
+    PLAN[day].ex.forEach(e => { if(log[e.k]) log[e.k] = log[e.k].filter(y => y.d !== d); });
+    delete done[d]; delete hist[d];
+    store.set("ppl-log", log); store.set("ppl-done", done); store.set("ppl-hist", hist);
+    $("#hModal").classList.remove("open"); renderAll();
+  };
+}
+$("#hModal").onclick = ev => { if(ev.target.id === "hModal") $("#hModal").classList.remove("open"); };
+
+/* ---------- backup / restore ---------- */
+function agoTxt(ts){ const d = Math.floor((Date.now()-ts)/864e5); return d <= 0 ? "today" : d === 1 ? "yesterday" : d+" days ago"; }
+async function backup(){
+  const data = {app:"ppl-workout", v:1, exported:new Date().toISOString(), unit, log, done, notes, hist};
+  const name = "ppl-backup-"+dateKey+".json";
+  const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
+  try{
+    const file = new File([blob], name, {type:"application/json"});
+    if(navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({files:[file], title:"PPL backup"});
+    else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    store.set("ppl-lastbackup", Date.now()); toast("Backup saved"); renderAll();
+  }catch(e){ if(!e || e.name !== "AbortError") alert("Backup didn't finish: "+(e && e.message || e)); }
+}
+$("#bkBtn").onclick = backup;
+$("#nudgeBtn").onclick = backup;
+$("#rsBtn").onclick = () => $("#rsFile").click();
+$("#rsFile").onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ""; if(!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    if(data.app !== "ppl-workout" || typeof data.log !== "object" || typeof data.done !== "object") throw new Error("That file isn't a PPL backup.");
+    const n = Object.keys(data.done).length;
+    if(!confirm("Restore "+n+" workout"+(n===1?"":"s")+" from "+new Date(data.exported).toLocaleDateString()+"? This replaces what's in the app now.")) return;
+    log = data.log; done = data.done; notes = data.notes || {}; hist = data.hist || {};
+    if(data.unit){ unit = data.unit; store.set("ppl-unit", unit); $("#unitBtn").textContent = unit.toUpperCase(); }
+    store.set("ppl-log", log); store.set("ppl-done", done); store.set("ppl-notes", notes); store.set("ppl-hist", hist);
+    toast("Restored"); renderAll();
+  }catch(e){ alert("Couldn't restore: "+e.message); }
+};
 $("#sDone").onclick = () => { $("#summary").classList.remove("open"); renderAll(); };
 
 let toastT;
