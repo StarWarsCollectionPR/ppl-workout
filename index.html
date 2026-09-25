@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Push Pull Legs</title>
-<meta name="description" content="A 6-day Push / Pull / Legs gym routine with set tracking, weight log and rest timer.">
+<meta name="description" content="A 3-day Push / Pull / Legs gym routine with set tracking, weight log and rest timer.">
 <meta name="theme-color" content="#111317">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8572a'/%3E%3Cpath d='M12 26h6v12h-6zM46 26h6v12h-6zM18 22h5v20h-5zM41 22h5v20h-5zM23 30h18v4H23z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -93,7 +93,7 @@ h1{font-size:30px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.02em
   <header>
     <div>
       <h1>Push · Pull · Legs</h1>
-      <div class="sub">6 days a week · tap a set when it's done</div>
+      <div class="sub">Mon · Wed · Fri at Planet Fitness · tap a set when it's done</div>
     </div>
     <button class="iconbtn" id="theme" aria-label="Toggle dark mode">◐</button>
   </header>
@@ -121,10 +121,11 @@ h1{font-size:30px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.02em
   <section class="notes">
     <h2>How to run it</h2>
     <ul>
-      <li><b>Progression:</b> when you hit the top of the rep range on every set, add weight next session (≈2.5 kg / 5 lb upper, 5 kg / 10 lb lower).</li>
-      <li><b>Effort:</b> finish most sets 1–2 reps shy of failure. Last set of isolation work can go to failure.</li>
+      <li><b>Progression:</b> when you hit the top of the rep range on every set, add weight next session .</li>
+      <li><b>Effort:</b> take every working set to 1–2 reps short of failure.</li>
       <li><b>Warm-up:</b> 5 min light cardio, then 2–3 ramp-up sets on the first compound lift.</li>
       <li><b>Rest:</b> 2–3 min on big compounds, 60–90 s on accessories. Use the timer below.</li>
+      <li><b>Commitment:</b> 3 days a week. Anything extra is a bonus.</li>
       <li>Your weights and checkmarks are saved on this device only.</li>
     </ul>
   </section>
@@ -142,34 +143,33 @@ h1{font-size:30px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.02em
 <script>
 const PLAN = {
   push:{title:"Push", sub:"Chest · Shoulders · Triceps", ex:[
-    {n:"Barbell Bench Press", s:4, r:"5–8", g:"Chest", rest:180, tip:"Shoulder blades pinched, feet planted, bar touches lower chest."},
-    {n:"Overhead Press", s:3, r:"6–10", g:"Shoulders", rest:150, tip:"Squeeze glutes, press straight up and push your head through at lockout."},
-    {n:"Incline Dumbbell Press", s:3, r:"8–12", g:"Upper chest", rest:90},
-    {n:"Cable / Machine Fly", s:3, r:"12–15", g:"Chest", rest:60},
-    {n:"Lateral Raise", s:4, r:"12–20", g:"Side delts", rest:60, tip:"Lead with the elbows, stop around shoulder height."},
-    {n:"Triceps Rope Pushdown", s:3, r:"10–15", g:"Triceps", rest:60},
-    {n:"Overhead Triceps Extension", s:3, r:"10–15", g:"Triceps", rest:60}
+    {n:"Barbell Incline Bench Press", s:4, r:"6–10", g:"Upper chest", rest:120, tip:"In the rack. Shoulder blades pinched, bar touches upper chest."},
+    {n:"Flat Dumbbell Press", s:3, r:"8–12", g:"Chest", rest:90},
+    {n:"Seated Dumbbell Shoulder Press", s:3, r:"8–12", g:"Shoulders", rest:90},
+    {n:"Pec Deck or Cable Fly", s:3, r:"12–15", g:"Chest", rest:60},
+    {n:"Cable Lateral Raise", s:3, r:"12–20 / arm", g:"Side delts", rest:60, tip:"Lead with the elbow, stop around shoulder height."},
+    {n:"Rope Triceps Pushdown", s:3, r:"10–15", g:"Triceps", rest:60, tip:"Superset with the next exercise to save time."},
+    {n:"Overhead Cable Triceps Extension", s:3, r:"10–15", g:"Triceps", rest:60}
   ]},
   pull:{title:"Pull", sub:"Back · Rear delts · Biceps", ex:[
-    {n:"Deadlift", s:3, r:"3–5", g:"Posterior chain", rest:180, tip:"Brace hard, bar over mid-foot, push the floor away. Swap for Rack Pulls on day 2."},
-    {n:"Pull-ups / Lat Pulldown", s:4, r:"6–10", g:"Lats", rest:120},
-    {n:"Barbell / Chest-supported Row", s:3, r:"8–12", g:"Mid back", rest:90},
-    {n:"Seated Cable Row", s:3, r:"10–12", g:"Mid back", rest:90},
-    {n:"Face Pull", s:3, r:"15–20", g:"Rear delts", rest:60, tip:"Pull to your forehead, rotate hands back at the end."},
-    {n:"Barbell / EZ Curl", s:3, r:"8–12", g:"Biceps", rest:60},
-    {n:"Hammer Curl", s:3, r:"10–15", g:"Biceps / forearms", rest:60}
+    {n:"Lat Pulldown", s:4, r:"8–12", g:"Lats", rest:120, tip:"Chest up, pull elbows down to your sides."},
+    {n:"Seated Cable Row", s:3, r:"8–12", g:"Mid back", rest:90},
+    {n:"One-arm Dumbbell Row", s:3, r:"8–12 / arm", g:"Lats", rest:90},
+    {n:"Straight-arm Cable Pulldown", s:3, r:"12–15", g:"Lats", rest:60},
+    {n:"Reverse Pec Deck", s:3, r:"15–20", g:"Rear delts", rest:60},
+    {n:"Incline Dumbbell Curl", s:3, r:"10–12", g:"Biceps", rest:60, tip:"Superset with the next exercise to save time."},
+    {n:"Cable or Dumbbell Hammer Curl", s:3, r:"10–15", g:"Biceps / forearms", rest:60}
   ]},
   legs:{title:"Legs", sub:"Quads · Hamstrings · Glutes · Calves", ex:[
-    {n:"Back Squat", s:4, r:"5–8", g:"Quads", rest:180, tip:"Brace, sit between your heels, knees track over toes."},
-    {n:"Romanian Deadlift", s:3, r:"8–10", g:"Hamstrings", rest:150, tip:"Soft knees, push hips back until you feel the hamstring stretch."},
-    {n:"Leg Press", s:3, r:"10–12", g:"Quads", rest:120},
-    {n:"Walking Lunge / Split Squat", s:3, r:"10 / leg", g:"Glutes", rest:90},
-    {n:"Leg Curl", s:3, r:"10–15", g:"Hamstrings", rest:60},
-    {n:"Standing Calf Raise", s:4, r:"10–15", g:"Calves", rest:60, tip:"Full stretch at the bottom, pause 1s at the top."},
-    {n:"Hanging Leg Raise", s:3, r:"10–15", g:"Core", rest:60}
+    {n:"Barbell Back Squat", s:4, r:"6–10", g:"Quads", rest:180, tip:"In the rack. Brace, sit between your heels, knees track over toes."},
+    {n:"Barbell Romanian Deadlift", s:3, r:"8–12", g:"Hamstrings", rest:120, tip:"Soft knees, push hips back until you feel the hamstring stretch."},
+    {n:"Leg Press", s:3, r:"10–15", g:"Quads", rest:90},
+    {n:"Seated or Lying Leg Curl", s:3, r:"10–15", g:"Hamstrings", rest:60},
+    {n:"Leg Extension", s:3, r:"12–15", g:"Quads", rest:60},
+    {n:"Standing or Seated Calf Raise", s:4, r:"10–15", g:"Calves", rest:60, tip:"Pause 1 sec at the bottom."}
   ]}
 };
-const WEEK = ["push","pull","legs","push","pull","legs","rest"]; // Mon..Sun
+const WEEK = ["push","rest","pull","rest","legs","rest","rest"]; // Mon..Sun
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 const store = {
@@ -198,7 +198,8 @@ WEEK.forEach((t,i) => {
   weekEl.appendChild(d);
 });
 
-let cur = WEEK[dow] === "rest" ? store.get("ppl-last","push") : WEEK[dow];
+const hashDay = location.hash.slice(1);
+let cur = PLAN[hashDay] ? hashDay : (WEEK[dow] === "rest" ? store.get("ppl-last","push") : WEEK[dow]);
 let checks = store.get("ppl-checks", {});
 if(checks.date !== dateKey) checks = {date:dateKey};
 const weights = store.get("ppl-weights", {});
@@ -208,7 +209,7 @@ function show(k){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.k===k));
   const p = PLAN[k];
   document.getElementById("dTitle").textContent = p.title + " day";
-  document.getElementById("dSub").textContent = p.sub + (WEEK[dow]==="rest" ? " · today is a rest day" : "");
+  document.getElementById("dSub").textContent = p.sub + (WEEK[dow]==="rest" ? " · rest day today" : "");
   document.getElementById("barFill").style.setProperty("--c", "var(--"+k+")");
   const list = document.getElementById("list"); list.innerHTML = "";
   p.ex.forEach((e,i) => {
