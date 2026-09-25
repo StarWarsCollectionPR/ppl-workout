@@ -204,6 +204,21 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pl:first-of-type{background:var(--accent);color:var(--on-accent)}
 .ptxt{font-size:14px}
 .pcin{width:100%;height:56px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:800 28px Inter,system-ui,sans-serif;text-align:center;margin-bottom:6px}
+/* recap + body weight */
+.kpi b small{font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:700;margin-left:4px;vertical-align:middle}
+.kpi b small.up{color:var(--accent-ink)}
+.kpi b small.dn{color:var(--muted)}
+span.chip{cursor:default}
+.bwrow{display:flex;gap:8px}
+.bwrow input{flex:1;min-width:0;height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:700 20px Inter,system-ui,sans-serif;text-align:center}
+.bwrow button{border:0;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:800;padding:0 16px}
+.bwsvg{width:100%;height:auto;display:block;margin:8px 0 4px}
+.bwsvg .gl{stroke:var(--line);stroke-dasharray:3 4}
+.bwsvg .tl{fill:var(--muted);font:600 9px Inter,system-ui,sans-serif}
+.bwlist{margin-top:6px}
+.bwlist div{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.bwlist span{flex:1;color:var(--muted)}
+.bwlist button{background:none;border:0;color:var(--muted);padding:2px 4px}
 /* targets, wins, history, backup */
 .row .last .tg{display:block;color:var(--accent-ink);font-size:15px;font-weight:700}
 .row .last .tg.up::before{content:"↑ "}
@@ -262,6 +277,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 
   <!-- WORKOUT VIEW -->
   <section id="vHome">
+    <div class="nudge" id="recapCard" hidden><span id="recapTxt"></span><button id="recapBtn">View</button></div>
+    <div class="nudge" id="bwNudge" hidden><span id="bwNudgeTxt"></span><button id="bwNudgeBtn">Log</button></div>
     <div class="nudge" id="nudge" hidden><span id="nudgeTxt"></span><button id="nudgeBtn">Back up</button></div>
     <div class="week" id="week"></div>
     <div class="hero">
@@ -285,6 +302,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   <section id="vProg" hidden>
     <div class="sec" style="margin-top:4px"><h2 class="d">Progress</h2><span id="since"></span></div>
     <div class="kpis k4" id="kpis"></div>
+    <div class="sec"><h2 class="d">Weekly recap</h2><span>Mon – Sun</span></div>
+    <div id="wlist"></div>
+    <div class="sec"><h2 class="d">Body weight</h2><span id="bwSince"></span></div>
+    <div class="bk" id="bwBox" style="margin-top:0"></div>
     <div class="sec"><h2 class="d">History</h2><span>Tap to view or fix</span></div>
     <div id="hlist"></div>
     <div id="plist"></div>
@@ -445,6 +466,7 @@ const bestE = k => Math.max(0, ...(log[k]||[]).flatMap(x => x.sets.map(s => e1(s
 const setTxt = s => s ? (+s.w ? s.w+" × "+s.r : s.r+" reps") : "—";
 const estMin = p => Math.round(5 + p.ex.reduce((m,e) => m + e.s*(45+e.rest), 0)/60);
 let hist = store.get("ppl-hist", {});        // { "2026-09-25": {day, mins, wins:[...]} }
+let bw = store.get("ppl-bw", {});            // { "2026-09-25": 182.4 }  body weight in the current unit
 const prevEntry = k => { const h = (log[k]||[]).filter(x => x.d !== dateKey); return h.length ? h[h.length-1] : null; };
 const rng = r => { const m = String(r).match(/(\d+)\D+(\d+)/); const n = parseInt(r,10) || 8; return m ? [+m[1], +m[2]] : [n, n]; };
 const INC = () => unit === "kg" ? 2.5 : 5;
@@ -518,7 +540,7 @@ function renderHome(){
          '<div class="last">'+(t.head ? '<span class="tg'+(t.kind==="up"?" up":"")+'">'+setTxt(t.head)+'</span>last '+setTxt(ts) : '<span class="tg">New</span>set a baseline')+'</div></div>';
   });
   $("#list").innerHTML = h;
-  renderNudge();
+  renderNudge(); renderRecapCard(); renderBwNudge();
 }
 function renderNudge(){
   const n = Object.keys(done).length, lb = store.get("ppl-lastbackup", 0);
@@ -543,6 +565,7 @@ function renderProg(){
   const thisWeek = dates.filter(d => d >= localDate(monday)).length;
   const winsTotal = Object.values(hist).reduce((a,x) => a + (x.wins||[]).length, 0);
   $("#since").textContent = dates.length ? "Since "+new Date(dates[0]+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"}) : "";
+  renderWeeks(); renderBW();
   $("#kpis").innerHTML = [[thisWeek+"/3","Week"],[dates.length,"Workouts"],[winsTotal,"Wins"],[streakWeeks(),"Streak"]].map(([b,s]) => '<div class="kpi"><b class="d">'+b+'</b><span>'+s+'</span></div>').join("");
 
   $("#hlist").innerHTML = dates.length ? dates.slice().reverse().map(d => {
@@ -581,7 +604,7 @@ function spark(pts){
 }
 $("#wipe").onclick = () => {
   if(!confirm("Delete all logged sets, notes and history on this device?")) return;
-  log = {}; done = {}; notes = {}; hist = {}; ["ppl-log","ppl-done","ppl-notes","ppl-hist"].forEach(store.del); renderAll();
+  log = {}; done = {}; notes = {}; hist = {}; bw = {}; ["ppl-log","ppl-done","ppl-notes","ppl-hist","ppl-bw"].forEach(store.del); renderAll();
 };
 
 /* ---------- nav ---------- */
@@ -779,6 +802,113 @@ function finish(){
   $("#summary").classList.add("open");
 }
 
+/* ---------- weekly recap ---------- */
+// function declarations (hoisted): renderHome() calls into these during the first render
+function addDays(d, n){ const x = new Date(d+"T12:00"); x.setDate(x.getDate()+n); return localDate(x); }
+function wkLabel(ws){
+  const a = new Date(ws+"T12:00"), b = new Date(addDays(ws,6)+"T12:00");
+  return a.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" – "+(a.getMonth()===b.getMonth() ? b.getDate() : b.toLocaleDateString(undefined,{month:"short",day:"numeric"}));
+}
+function lastBwBefore(d){ const k = Object.keys(bw).filter(x => x < d).sort(); return k.length ? bw[k[k.length-1]] : null; }
+function weekStats(ws){
+  const we = addDays(ws, 7), ds = Object.keys(done).filter(d => d >= ws && d < we).sort();
+  let sets = 0, v = 0, mins = 0; const wins = [];
+  ds.forEach(d => {
+    PLAN[done[d]].ex.forEach(e => { const en = (log[e.k]||[]).find(y => y.d === d); if(en){ sets += en.sets.length; v += vol(en.sets); } });
+    const h = hist[d] || {}; mins += h.mins || 0; wins.push(...(h.wins || []));
+  });
+  const bk = Object.keys(bw).filter(d => d >= ws && d < we).sort();
+  return {ws, ds, days:ds.map(d => done[d]), sets, vol:v, mins, wins, prs:wins.filter(w => /^New PR/.test(w)).length, bwEnd: bk.length ? bw[bk[bk.length-1]] : null};
+}
+function pct(a, b){ if(!b) return ""; const p = Math.round((a/b - 1)*100); return p ? ' <small class="'+(p>0?'up':'dn')+'">'+(p>0?'▲':'▼')+Math.abs(p)+'%</small>' : ""; }
+function openRecap(ws){
+  const s = weekStats(ws), p = weekStats(addDays(ws,-7)), n = s.ds.length;
+  const isNow = ws === weekStart(0);
+  const msg = n >= 3 ? "Full week. That's how it's done." : n === 2 ? (isNow ? "Two down. One more to go." : "Solid week. One more next time.") : n === 1 ? "You showed up. Build on it." : "Rest week. Back at it Monday.";
+  let h = '<div class="eyebrow">Week of '+wkLabel(ws)+'</div><h3 class="d" style="font-size:52px;margin:6px 0 2px">'+(n>=3 ? "3 for 3" : n+" of 3")+'</h3>'+
+    '<p class="muted" style="margin:0 0 14px">'+msg+'</p>'+
+    '<div class="chips" style="margin:0 0 14px">'+["push","pull","legs"].map(k => '<span class="chip" aria-pressed="'+s.days.includes(k)+'">'+(s.days.includes(k)?"✓ ":"")+PLAN[k].title+'</span>').join("")+'</div>'+
+    '<div class="kpis" style="grid-template-columns:repeat(2,1fr);margin-bottom:14px">'+
+      '<div class="kpi"><b class="d">'+s.sets+pct(s.sets,p.sets)+'</b><span>Sets</span></div>'+
+      '<div class="kpi"><b class="d">'+Math.round(s.vol).toLocaleString()+pct(s.vol,p.vol)+'</b><span>'+unit+' lifted</span></div>'+
+      '<div class="kpi"><b class="d">'+s.wins.length+'</b><span>Wins · '+s.prs+' PR'+(s.prs===1?'':'s')+'</span></div>'+
+      '<div class="kpi"><b class="d">'+(s.mins||"—")+'</b><span>Minutes</span></div>'+
+    '</div>';
+  const prevBw = lastBwBefore(ws);
+  if(s.bwEnd != null) h += '<div class="win" style="margin-bottom:14px"><i>⚖</i>Body weight '+s.bwEnd+' '+unit+(prevBw != null ? ' ('+(s.bwEnd-prevBw>0?'+':'')+(+(s.bwEnd-prevBw).toFixed(1))+' vs last week)' : '')+'</div>';
+  if(s.wins.length) h += '<div class="hx">Wins this week</div><div class="wins">'+s.wins.slice(0,8).map(w => '<div class="win"><i>✓</i>'+esc(w)+'</div>').join("")+(s.wins.length>8?'<div class="muted" style="font-size:13px">+'+(s.wins.length-8)+' more</div>':'')+'</div>';
+  const st = streakWeeks(); if(st >= 2 && (isNow || ws === weekStart(1))) h += '<div class="win big" style="margin-bottom:6px"><i>🔥</i>'+st+'-week streak of 3 for 3</div>';
+  h += '<div class="btnrow"><button class="pri" id="rClose">Close</button></div>';
+  $("#hCard").innerHTML = h; $("#hModal").classList.add("open"); $("#hCard").scrollTop = 0;
+  $("#rClose").onclick = () => $("#hModal").classList.remove("open");
+}
+function renderWeeks(){
+  const first = Object.keys(done).sort()[0];
+  const rows = [];
+  for(let w = 0; w < 12; w++){
+    const ws = weekStart(w); if(w > 0 && (!first || ws < addDays(first, -6))) break;
+    const s = weekStats(ws); if(w > 0 && !s.ds.length) continue;
+    rows.push('<button class="hrow" data-ws="'+ws+'"><div class="dt"><b class="d">'+s.ds.length+'/3</b><small>'+(w===0?"now":"")+'</small></div>'+
+      '<div class="t"><b>'+(w===0 ? "This week" : w===1 ? "Last week" : "Week of "+wkLabel(ws))+'</b><small>'+s.sets+' sets · '+Math.round(s.vol).toLocaleString()+' '+unit+(s.mins?' · '+s.mins+' min':'')+'</small></div>'+
+      (s.wins.length ? '<span class="w">'+s.wins.length+' win'+(s.wins.length>1?'s':'')+'</span>' : '')+'</button>');
+  }
+  $("#wlist").innerHTML = rows.join("");
+  $("#wlist").querySelectorAll(".hrow").forEach(b => b.onclick = () => openRecap(b.dataset.ws));
+}
+// Home card: Sunday shows this week's recap, Monday shows last week's; hidden once viewed.
+function renderRecapCard(){
+  const ws = dow === 6 ? weekStart(0) : dow === 0 ? weekStart(1) : null;
+  const show = !!ws && store.get("ppl-recap-seen", "") !== ws && weekStats(ws).ds.length > 0;
+  $("#recapCard").hidden = !show;
+  if(!show) return;
+  $("#recapTxt").innerHTML = "<b>Your week recap is ready</b> · "+wkLabel(ws);
+  $("#recapBtn").onclick = () => { store.set("ppl-recap-seen", ws); openRecap(ws); renderRecapCard(); };
+}
+
+/* ---------- body weight ---------- */
+function renderBwNudge(){
+  const ks = Object.keys(bw).sort(), last = ks[ks.length-1];
+  const show = !bw[dateKey] && (last ? last <= addDays(dateKey, -7) : Object.keys(done).length >= 1);
+  $("#bwNudge").hidden = !show;
+  if(!show) return;
+  const days = last ? Math.round((new Date(dateKey+"T12:00") - new Date(last+"T12:00"))/864e5) : 0;
+  $("#bwNudgeTxt").innerHTML = last ? "<b>Weekly weigh-in</b> · last one "+days+" days ago" : "<b>Track your body weight</b> · once a week is enough";
+  $("#bwNudgeBtn").onclick = () => { view("prog"); setTimeout(() => { $("#bwBox").scrollIntoView({block:"center"}); $("#bwIn").focus(); }, 50); };
+}
+function renderBW(){
+  const ks = Object.keys(bw).sort(), latest = ks.length ? bw[ks[ks.length-1]] : null;
+  const todayV = bw[dateKey] ?? "";
+  const diff = (a,b) => { const x = +(a-b).toFixed(1); return (x > 0 ? "+" : "") + x; };
+  $("#bwSince").textContent = ks.length ? "Since "+new Date(ks[0]+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"}) : "";
+  let h = '<div class="bwrow"><input id="bwIn" inputmode="decimal" placeholder="'+(latest ?? "Today, "+unit)+'" value="'+esc(todayV)+'" aria-label="Body weight today in '+unit+'"><button id="bwBtn">'+(todayV !== "" ? "Update" : "Log today")+'</button></div>';
+  if(ks.length){
+    const old = ks.filter(k => k <= addDays(dateKey, -30)), base30 = old.length ? bw[old[old.length-1]] : bw[ks[0]];
+    h += '<div class="kpis" style="margin:12px 0 4px"><div class="kpi"><b class="d">'+latest+'</b><span>'+unit+' now</span></div><div class="kpi"><b class="d">'+diff(latest, base30)+'</b><span>30 days</span></div><div class="kpi"><b class="d">'+diff(latest, bw[ks[0]])+'</b><span>All time</span></div></div>';
+    h += bwChart(ks.slice(-20));
+    h += '<div class="bwlist">'+ks.slice(-5).reverse().map(k => '<div><span>'+new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+'</span><b>'+bw[k]+' '+unit+'</b><button data-k="'+k+'" aria-label="Delete weigh-in">✕</button></div>').join("")+'</div>';
+  } else h += '<p style="margin:10px 0 0">Weigh in once a week, same time of day (morning, before eating) for a clean trend.</p>';
+  $("#bwBox").innerHTML = h;
+  $("#bwBtn").onclick = () => {
+    const v = parseFloat($("#bwIn").value); if(!(v > 0)){ $("#bwIn").focus(); return; }
+    bw[dateKey] = v; store.set("ppl-bw", bw); toast("Weigh-in saved"); renderAll();
+  };
+  $("#bwBox").querySelectorAll(".bwlist button").forEach(b => b.onclick = () => { if(!confirm("Delete this weigh-in?")) return; delete bw[b.dataset.k]; store.set("ppl-bw", bw); renderAll(); });
+}
+function bwChart(ks){
+  if(ks.length < 2) return '<p class="muted" style="font-size:12px;margin:6px 0">Log one more weigh-in to see your trend line.</p>';
+  const vs = ks.map(k => bw[k]), mn = Math.min(...vs), mx = Math.max(...vs), rg = (mx - mn) || 1;
+  const t0 = new Date(ks[0]+"T12:00").getTime(), t1 = new Date(ks[ks.length-1]+"T12:00").getTime(), tr = (t1 - t0) || 1;
+  const pts = ks.map((k,i) => [8 + (new Date(k+"T12:00").getTime() - t0)/tr*284, 12 + (1 - (vs[i]-mn)/rg)*60]);
+  const line = pts.map(p => p.map(n => n.toFixed(1)).join(",")).join(" ");
+  const [lx, ly] = pts[pts.length-1];
+  return '<svg class="bwsvg" viewBox="0 0 300 92" role="img" aria-label="Body weight trend from '+vs[0]+' to '+vs[vs.length-1]+' '+unit+'">'+
+    '<line x1="0" x2="300" y1="12" y2="12" class="gl"/><line x1="0" x2="300" y1="72" y2="72" class="gl"/>'+
+    '<text x="0" y="9" class="tl">'+mx+'</text><text x="0" y="86" class="tl">'+mn+'</text>'+
+    '<polyline points="'+line+'" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+    pts.map(p => '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.5" fill="var(--muted)"/>').join("")+
+    '<circle cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="5" fill="var(--accent)"/></svg>';
+}
+
 /* ---------- plates + warm-ups ---------- */
 const PLATES = {lb:[45,35,25,10,5,2.5], kg:[25,20,15,10,5,2.5,1.25]};
 const BARS = {lb:[45,35,25,15], kg:[20,15,10]};
@@ -892,7 +1022,7 @@ $("#hModal").onclick = ev => { if(ev.target.id === "hModal") $("#hModal").classL
 /* ---------- backup / restore ---------- */
 function agoTxt(ts){ const d = Math.floor((Date.now()-ts)/864e5); return d <= 0 ? "today" : d === 1 ? "yesterday" : d+" days ago"; }
 async function backup(){
-  const data = {app:"ppl-workout", v:1, exported:new Date().toISOString(), unit, log, done, notes, hist};
+  const data = {app:"ppl-workout", v:1, exported:new Date().toISOString(), unit, log, done, notes, hist, bw};
   const name = "ppl-backup-"+dateKey+".json";
   const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
   try{
@@ -912,9 +1042,9 @@ $("#rsFile").onchange = async ev => {
     if(data.app !== "ppl-workout" || typeof data.log !== "object" || typeof data.done !== "object") throw new Error("That file isn't a PPL backup.");
     const n = Object.keys(data.done).length;
     if(!confirm("Restore "+n+" workout"+(n===1?"":"s")+" from "+new Date(data.exported).toLocaleDateString()+"? This replaces what's in the app now.")) return;
-    log = data.log; done = data.done; notes = data.notes || {}; hist = data.hist || {};
+    log = data.log; done = data.done; notes = data.notes || {}; hist = data.hist || {}; bw = data.bw || {};
     if(data.unit){ unit = data.unit; store.set("ppl-unit", unit); $("#unitBtn").textContent = unit.toUpperCase(); }
-    store.set("ppl-log", log); store.set("ppl-done", done); store.set("ppl-notes", notes); store.set("ppl-hist", hist);
+    store.set("ppl-log", log); store.set("ppl-done", done); store.set("ppl-notes", notes); store.set("ppl-hist", hist); store.set("ppl-bw", bw);
     toast("Restored"); renderAll();
   }catch(e){ alert("Couldn't restore: "+e.message); }
 };
