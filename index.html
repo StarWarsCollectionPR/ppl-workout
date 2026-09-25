@@ -185,6 +185,25 @@ button{font:inherit;color:inherit;cursor:pointer}
 .install b{display:block;font-size:14px}
 .install span{color:var(--muted)}
 .install button{margin-left:auto;background:none;border:0;color:var(--muted);font-size:18px;padding:4px}
+/* warm-ups + plates */
+.muted{color:var(--muted)}
+.aux{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px 12px;margin-bottom:12px}
+.aux-h{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:8px}
+.aux-h span{color:var(--muted);font-size:12px}
+.linkbtn{background:none;border:0;color:var(--accent-ink);font-weight:700;font-size:12px;padding:2px 0}
+.wu{display:flex;flex-wrap:wrap;gap:6px;font-size:13px}
+.wset{border:1.5px solid var(--line);background:var(--surface-2);border-radius:10px;padding:7px 10px;text-align:left;line-height:1.2}
+.wset b{font-size:15px}
+.wset small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.wset.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.wset.on small{color:var(--on-accent);opacity:.7}
+.bar{display:flex;align-items:center;gap:2px;height:72px;margin-bottom:6px}
+.sleeve{width:44px;height:8px;background:var(--muted);border-radius:2px;opacity:.6}
+.collar{width:8px;height:16px;background:var(--muted);border-radius:2px}
+.pl{font-style:normal;width:22px;border-radius:4px;background:var(--text);color:var(--bg);display:grid;place-items:center;font-size:10px;font-weight:800;letter-spacing:-.03em}
+.pl:first-of-type{background:var(--accent);color:var(--on-accent)}
+.ptxt{font-size:14px}
+.pcin{width:100%;height:56px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:800 28px Inter,system-ui,sans-serif;text-align:center;margin-bottom:6px}
 /* targets, wins, history, backup */
 .row .last .tg{display:block;color:var(--accent-ink);font-size:15px;font-weight:700}
 .row .last .tg.up::before{content:"↑ "}
@@ -253,6 +272,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="cta d" id="startBtn">Start workout</button>
       <div class="links">
         <a href="#" id="formLink">Form guide</a>
+        <a href="#" id="plateLink">Plate calc</a>
         <span style="color:var(--muted)">Planet Fitness · 5:30 PM</span>
       </div>
     </div>
@@ -597,6 +617,8 @@ function renderPlayer(){
   let h = '<div class="eyebrow">'+esc(e.g)+'</div><h2 class="d">'+esc(e.n)+'</h2>'+
     '<div class="target"><span class="hi">'+(t.kind==="up"?"↑ ":"")+esc(t.text)+'</span><span>'+e.s+' × '+esc(e.r)+'</span><span>Rest '+fmtT(e.rest)+'</span></div>'+
     howTo(e, !cur.some(x => x && x.done))+
+    (sess.i === 0 ? '<div class="aux"><div class="aux-h"><b>Warm-up sets</b><span>not logged</span></div><div class="wu" id="wu"></div></div>' : '')+
+    (isBar(e) ? '<div class="aux"><div class="aux-h"><b>Plates per side</b><button class="linkbtn" id="barBtn"></button></div><div id="plates"></div></div>' : '')+
     '<div class="sethead"><span style="text-align:center">Set</span><span style="text-align:center">Last</span><span style="text-align:center">'+unit+'</span><span style="text-align:center">Reps</span><span></span></div>';
   for(let s=0; s<e.s; s++){
     const c = cur[s] || {}, pv = le && le.sets[s], ts = t.sets[s];
@@ -606,16 +628,41 @@ function renderPlayer(){
       '<button class="ck" aria-label="Log set '+(s+1)+'" aria-pressed="'+!!c.done+'"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>';
   }
   h += '<textarea class="notes" id="exNote" placeholder="Notes for next time (seat height, grip, how it felt)…">'+esc(notes[e.k]||"")+'</textarea>';
-  $("#pBody").innerHTML = h; $("#pBody").scrollTop = 0;
+  const keep = renderPlayer.lastI === sess.i + sess.day ? $("#pBody").scrollTop : 0;
+  $("#pBody").innerHTML = h; $("#pBody").scrollTop = keep; renderPlayer.lastI = sess.i + sess.day;
   $("#pPrev").disabled = sess.i===0;
   $("#pNext").textContent = sess.i===p.ex.length-1 ? "Finish workout" : "Next exercise";
 
   $("#pBody").querySelectorAll(".set").forEach(row => {
     const s = +row.dataset.s;
-    row.querySelectorAll("input").forEach(inp => inp.oninput = () => { (cur[s] ||= {})[inp.dataset.f] = inp.value.trim(); saveSess(); });
+    row.querySelectorAll("input").forEach(inp => inp.oninput = () => { (cur[s] ||= {})[inp.dataset.f] = inp.value.trim(); saveSess(); refreshAux(); });
     row.querySelector(".ck").onclick = () => logSet(s, row);
   });
   $("#exNote").oninput = ev => { notes[e.k] = ev.target.value; store.set("ppl-notes", notes); };
+  if($("#barBtn")) $("#barBtn").onclick = () => openPlates();
+  refreshAux();
+}
+/* Working weight = weight of the next set not yet logged (typed value, else the target). */
+function workingWeight(){
+  const rows = [...$("#pBody").querySelectorAll(".set")];
+  const r = rows.find(x => !x.classList.contains("done")) || rows[0];
+  const w = r && r.querySelector('input[data-f="w"]');
+  return w ? (parseFloat(w.value) || parseFloat(w.placeholder) || 0) : 0;
+}
+function refreshAux(){
+  const e = PLAN[sess.day].ex[sess.i], W = workingWeight();
+  if($("#plates")) $("#plates").innerHTML = W ? plateHTML(W) : '<span class="muted">Enter a weight to see the plates.</span>';
+  if($("#barBtn")) $("#barBtn").textContent = barW()+" "+unit+" bar ▾";
+  if($("#wu")){
+    // warm-ups use the first set's weight, not the next unlogged one
+    const w1 = $("#pBody").querySelector('.set input[data-f="w"]');
+    const top = w1 ? (parseFloat(w1.value) || parseFloat(w1.placeholder) || 0) : 0;
+    const sets = warmups(e, top);
+    const st = (sess.warm ||= []);
+    $("#wu").innerHTML = sets ? sets.map((s,j) => '<button class="wset'+(st[j]?' on':'')+'" data-j="'+j+'"><b>'+(j === 0 ? (isBar(e) ? "Empty bar" : "Light") : s.w)+'</b> × '+s.r+(isBar(e) && s.w > barW() ? '<small>'+plateTxt(s.w)+'</small>' : '')+'</button>').join("")
+      : '<span class="muted">Enter your working weight in set 1 to get ramp-up sets.</span>';
+    $("#wu").querySelectorAll(".wset").forEach(b => b.onclick = () => { st[+b.dataset.j] = !st[+b.dataset.j]; saveSess(); b.classList.toggle("on", st[+b.dataset.j]); });
+  }
 }
 function logSet(s, row){
   const p = PLAN[sess.day], e = p.ex[sess.i], cur = sess.sets[sess.i], c = cur[s] || (cur[s] = {});
@@ -732,6 +779,58 @@ function finish(){
   $("#summary").classList.add("open");
 }
 
+/* ---------- plates + warm-ups ---------- */
+const PLATES = {lb:[45,35,25,10,5,2.5], kg:[25,20,15,10,5,2.5,1.25]};
+const BARS = {lb:[45,35,25,15], kg:[20,15,10]};
+const isBar = e => /barbell/i.test(e.n);
+const barPref = store.get("ppl-bar", {lb:45, kg:20});
+const barW = () => barPref[unit] ?? (unit === "kg" ? 20 : 45);
+const roundTo = (x, step) => Math.round(x/step)*step;
+function plateSplit(total){
+  let side = (total - barW())/2; if(side < 0) return null;
+  const out = [];
+  PLATES[unit].forEach(p => { while(side >= p - 1e-9){ out.push(p); side -= p; } });
+  return {plates:out, off:+(side*2).toFixed(2)};
+}
+function plateTxt(total){ const s = plateSplit(total); return !s ? "under bar" : s.plates.length ? s.plates.join(" + ") : "empty bar"; }
+function plateHTML(total){
+  const s = plateSplit(total);
+  if(!s) return '<span class="muted">'+total+' '+unit+' is lighter than the '+barW()+' '+unit+' bar.</span>';
+  const max = PLATES[unit][0];
+  const vis = s.plates.map(p => '<i class="pl" style="height:'+Math.round(22 + 46*p/max)+'px">'+p+'</i>').join("");
+  return '<div class="bar"><span class="sleeve"></span>'+vis+'<span class="collar"></span></div>'+
+    '<div class="ptxt">'+(s.plates.length ? '<b>'+s.plates.join(" + ")+'</b> each side' : '<b>Empty bar</b>')+
+    (s.off ? ' <span class="muted">(closest: '+(total - s.off)+' '+unit+')</span>' : '')+'</div>';
+}
+/* Ramp-up: empty bar/light x10, 50% x5, 70% x3, 85% x1 of the working weight, rounded to loadable jumps. */
+function warmups(e, top){
+  if(!top) return null;
+  const step = unit === "kg" ? 2.5 : 5, bar = isBar(e) ? barW() : 0;
+  const out = [{w:bar, r:10}];
+  // barbell: keep each side a multiple of 5 lb / 2.5 kg so no tiny plates are needed
+  [[.5,5],[.7,3],[.85,1]].forEach(([f,r]) => { const w = isBar(e) ? Math.max(bar, bar + roundTo(top*f - bar, step*2)) : roundTo(top*f, step); if(w > out[out.length-1].w && w < top) out.push({w, r}); });
+  return out;
+}
+function openPlates(start){
+  const W = start || (sess ? workingWeight() : 0) || (unit === "kg" ? 60 : 135);
+  $("#hCard").innerHTML = '<div class="eyebrow">Plate calculator</div><h3 class="d" style="font-size:40px;margin:6px 0 12px">Load the bar</h3>'+
+    '<label class="hx" for="pcIn" style="display:block">Total weight ('+unit+')</label>'+
+    '<input id="pcIn" class="pcin" inputmode="decimal" value="'+W+'">'+
+    '<div class="hx">Bar</div><div class="chips" id="pcBars" style="margin:0 0 14px"></div>'+
+    '<div id="pcOut"></div>'+
+    '<p class="muted" style="font-size:12px;margin:12px 0 0">Smith machines at Planet Fitness usually have a lighter bar, around 15–25 lb. Pick the closest.</p>'+
+    '<div class="btnrow"><button class="pri" id="pcClose">Done</button></div>';
+  const draw = () => {
+    $("#pcBars").innerHTML = BARS[unit].map(b => '<button class="chip" aria-pressed="'+(b===barW())+'" data-b="'+b+'">'+b+' '+unit+'</button>').join("");
+    $("#pcBars").querySelectorAll(".chip").forEach(c => c.onclick = () => { barPref[unit] = +c.dataset.b; store.set("ppl-bar", barPref); draw(); if(sess && $("#player").classList.contains("open")) refreshAux(); });
+    const v = parseFloat($("#pcIn").value);
+    $("#pcOut").innerHTML = v ? plateHTML(v) : "";
+  };
+  $("#hModal").classList.add("open"); draw();
+  $("#pcIn").oninput = draw;
+  $("#pcClose").onclick = () => $("#hModal").classList.remove("open");
+}
+
 /* ---------- form guide (in-app, works offline) ---------- */
 const PLAY = '<svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" fill="currentColor"/></svg>';
 function howTo(e, open){
@@ -751,6 +850,7 @@ function openForm(day, idx){
   $("#fClose").onclick = () => $("#hModal").classList.remove("open");
 }
 $("#formLink").onclick = ev => { ev.preventDefault(); openForm(sel); };
+$("#plateLink").onclick = ev => { ev.preventDefault(); openPlates(); };
 $("#list").onclick = ev => { const r = ev.target.closest(".row[data-i]"); if(r) openForm(sel, +r.dataset.i); };
 
 /* ---------- history detail / edit ---------- */
