@@ -122,7 +122,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 .target{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .target span{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:5px 11px;font-size:12px;font-weight:600}
 .target span.hi{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
-.cue{color:var(--muted);font-size:14px;margin:0 0 10px}
+.how{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px;margin-bottom:16px}
+.how summary{cursor:pointer;list-style:none;font-weight:700;font-size:14px;padding:10px 0;display:flex;justify-content:space-between}
+.how summary::-webkit-details-marker{display:none}
+.how summary::after{content:"+";color:var(--accent-ink);font-weight:800}
+.how[open] summary::after{content:"2"}
+.how ol{margin:0 0 10px;padding-left:20px;font-size:14px}
+.how li{margin:0 0 6px}
+.how .alt{font-size:13px;color:var(--muted);margin:0 0 12px}
+.how .alt b{color:var(--text)}
+.demo{display:inline-flex;align-items:center;gap:8px;border-radius:99px;background:var(--text);color:var(--bg);text-decoration:none;font-weight:700;font-size:13px;padding:9px 14px;margin-bottom:12px}
+.row{cursor:pointer}
 .p-links{display:flex;gap:14px;font-size:13px;margin-bottom:16px}
 .p-links a{color:var(--accent-ink);font-weight:700;text-decoration:none}
 .sethead,.set{display:grid;grid-template-columns:44px 1fr 1fr 1fr 52px;gap:8px;align-items:center}
@@ -242,7 +252,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       <div class="stats" id="hStats"></div>
       <button class="cta d" id="startBtn">Start workout</button>
       <div class="links">
-        <a id="formLink" target="_blank" rel="noopener">Form guide ↗</a>
+        <a href="#" id="formLink">Form guide</a>
         <span style="color:var(--muted)">Planet Fitness · 6:00 PM</span>
       </div>
     </div>
@@ -340,10 +350,40 @@ const PLAN = {
     {n:"Standing or Seated Calf Raise", s:4, r:"10–15", g:"Calves", rest:60, tip:"Pause 1 sec at the bottom."}
   ]}
 };
+// Form guide, same order as PLAN: c = cues, a = alternative if the machine is taken, q = demo search
+const FORM = {
+  push:[
+    {q:"barbell incline bench press", a:"Smith machine incline press.", c:["Set the bench to about 30 degrees in the rack. Grip just outside shoulder width.","Pin your shoulder blades back and down before you unrack, and keep them there.","Lower for 2 to 3 seconds to your upper chest, just below the collarbones. Forearms vertical at the bottom, press without bouncing."]},
+    {q:"flat dumbbell bench press", a:"Chest press machine.", c:["Kick the dumbbells up off your knees as you lie back.","Feet planted, slight arch, elbows about 45 to 60 degrees from your torso.","Let the dumbbells sink to chest level for a full stretch, then press up and slightly in. Stop before they clank."]},
+    {q:"seated dumbbell shoulder press", a:"Shoulder press machine.", c:["Bench almost upright, around 80 degrees, back flat on the pad.","Start with the dumbbells at ear level, palms forward or turned slightly in.","Press to just short of lockout. Keep ribs down so your lower back does not arch off the pad."]},
+    {q:"pec deck fly", a:"Whichever of the two is free.", c:["Pec deck: handles at chest height, chest up, shoulders back against the pad.","Keep a slight bend in the elbows the whole set.","Open wide for a deep stretch, then bring your hands together in front of your chest and squeeze for 1 second."]},
+    {q:"single arm cable lateral raise", a:"Dumbbell lateral raise.", c:["Pulley at the lowest setting, handle in the hand farthest from the stack.","Lean slightly away from the machine and lead the movement with your elbow.","Raise to shoulder height, no higher. Lower slowly and do not shrug."]},
+    {q:"rope triceps pushdown", a:"Straight bar pushdown.", c:["Rope on a high pulley. Elbows tucked at your sides and they do not move.","Push down and spread the rope apart at the bottom, squeezing the triceps.","Superset with the next exercise: do a set of each back to back, then rest about 60 sec."]},
+    {q:"overhead cable triceps extension rope", a:"Overhead dumbbell extension.", c:["Use the same rope, pulley set low or mid. Face away from the stack in a split stance.","Elbows point forward and stay close to your head.","Let your hands travel deep behind your head for the stretch, then extend fully and squeeze."]}
+  ],
+  pull:[
+    {q:"lat pulldown", a:"Assisted pull-up machine with little or no assist.", c:["Grip slightly wider than shoulder width. Lock your thighs under the pad.","Lean back about 15 degrees and drive your elbows down to your sides, bringing the bar to your upper chest.","At the top, let your shoulder blades rise for a full stretch before the next rep."]},
+    {q:"seated cable row v bar", a:"Seated row machine.", c:["Use the V handle. Sit tall with knees slightly bent.","Pull the handle to your lower ribs with elbows close to your body.","On the way back, let your shoulders reach forward for the stretch without rounding your lower back."]},
+    {q:"single arm dumbbell row", a:"Single arm cable row.", c:["One hand and one knee on the bench, back flat.","Pull the dumbbell toward your hip in an arc, not straight up to your chest.","Let it hang fully at the bottom. If the heaviest dumbbells get easy, slow the lowering to 3 or 4 seconds."]},
+    {q:"straight arm cable pulldown", a:"Dumbbell pullover on a flat bench.", c:["Straight bar or rope on a high pulley. Step back and hinge forward slightly.","Arms nearly straight with a soft bend in the elbows.","Sweep the bar down to your thighs using your lats, pause, then let it rise until you feel the stretch."]},
+    {q:"reverse pec deck rear delt fly", a:"Cable face pull with a rope.", c:["Face the pad with handles at shoulder height.","Arms nearly straight. Sweep out and back, leading with your elbows.","Do not squeeze your shoulder blades hard. The rear delts should do the work."]},
+    {q:"incline dumbbell curl", a:"Standing cable curl.", c:["Bench at 45 to 60 degrees so your arms hang behind your body.","Keep your elbows still and curl without swinging. Lower all the way for the full stretch.","Superset with the next exercise: do a set of each back to back, then rest about 60 sec."]},
+    {q:"dumbbell hammer curl", a:"Whichever of the two is free.", c:["Palms facing each other the whole time. With a cable, use the rope on a low pulley.","Elbows pinned to your sides. Curl up, then control the way down.","Keep the tempo strict, no body swing."]}
+  ],
+  legs:[
+    {q:"barbell back squat", a:"Smith machine squat.", c:["Bar across your upper traps in the rack, safeties set just below your bottom position.","Feet about shoulder width, toes slightly out. Big breath and brace before each rep.","Sit down between your feet to at least parallel, knees tracking over toes, then drive up through the middle of your foot."]},
+    {q:"barbell romanian deadlift", a:"Dumbbell or Smith machine Romanian deadlift.", c:["Start standing with the bar at mid thigh and a soft bend in your knees.","Push your hips back and let the bar slide down your thighs with a flat back.","Stop when your hamstrings are fully stretched, usually around mid shin, then squeeze your glutes to stand."]},
+    {q:"leg press", a:"Hack squat or Smith machine split squat.", c:["Feet shoulder width in the middle of the platform.","Lower as deep as you can without your lower back peeling off the pad.","Press up smoothly and stop just short of locking your knees."]},
+    {q:"seated leg curl machine", a:"Whichever of the two is free.", c:["Line up your knee with the machine's pivot point. Pad just above your heels.","Curl all the way, pause briefly, then control the weight back up.","Seated gives a better stretch than lying if both are free."]},
+    {q:"leg extension machine", a:"Goblet squat with heels raised.", c:["Knee lined up with the pivot, pad on your lower shin.","Hold the handles and sit back into the seat.","Extend fully, hold 1 second at the top, lower slowly."]},
+    {q:"standing calf raise", a:"Calf press on the leg press.", c:["Balls of your feet on the platform edge or a plate.","Drop your heels for a full stretch and pause 1 second at the bottom.","Rise as high as you can onto your big toe. No bouncing."]}
+  ]
+};
+Object.keys(FORM).forEach(d => FORM[d].forEach((f,i) => Object.assign(PLAN[d].ex[i], f)));
+const demoUrl = e => "https://www.youtube.com/results?search_query="+encodeURIComponent((e.q||e.n)+" proper form");
 const WEEK = ["push","rest","pull","rest","legs","rest","rest"]; // Mon..Sun
 const WD = ["M","T","W","T","F","S","S"];
 const DAYNAME = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-const FORM_GUIDE = "https://claude.ai/artifact/7azYw4NfrW6kczghcF8ZXn#";
 Object.values(PLAN).forEach(p => p.ex.forEach(e => e.k = e.n.toLowerCase().replace(/[^a-z0-9]+/g,"-")));
 
 const store = {
@@ -443,7 +483,6 @@ function renderHome(){
   const sets = p.ex.reduce((a,e)=>a+e.s,0);
   $("#hStats").innerHTML = [[p.ex.length,"Exercises"],[sets,"Sets"],["~"+estMin(p),"Minutes"]].map(([b,s]) => '<div class="stat"><b class="d">'+b+'</b><span>'+s+'</span></div>').join("");
   $("#startBtn").textContent = sess && sess.day===sel ? "Resume workout" : "Start workout";
-  $("#formLink").href = FORM_GUIDE + sel;
 
   $("#chips").innerHTML = "";
   Object.keys(PLAN).forEach(k => {
@@ -455,7 +494,7 @@ function renderHome(){
   let h = '<div class="row warm"><div class="i d">0</div><div class="t"><b>Warm-up</b><small>5 min cardio + 2–3 light ramp-up sets</small></div></div>';
   p.ex.forEach((e,i) => {
     const le = lastEntry(e.k), ts = le && topSet(le.sets), t = targetFor(e, le);
-    h += '<div class="row"><div class="i d">'+(i+1)+'</div><div class="t"><b>'+esc(e.n)+'</b><small>'+e.s+' × '+esc(e.r)+' · '+esc(e.g)+'</small></div>'+
+    h += '<div class="row" data-i="'+i+'"><div class="i d">'+(i+1)+'</div><div class="t"><b>'+esc(e.n)+'</b><small>'+e.s+' × '+esc(e.r)+' · '+esc(e.g)+'</small></div>'+
          '<div class="last">'+(t.head ? '<span class="tg'+(t.kind==="up"?" up":"")+'">'+setTxt(t.head)+'</span>last '+setTxt(ts) : '<span class="tg">New</span>set a baseline')+'</div></div>';
   });
   $("#list").innerHTML = h;
@@ -557,8 +596,7 @@ function renderPlayer(){
   $("#pCount").textContent = PLAN[sess.day].title.toUpperCase()+" · "+(sess.i+1)+" / "+p.ex.length;
   let h = '<div class="eyebrow">'+esc(e.g)+'</div><h2 class="d">'+esc(e.n)+'</h2>'+
     '<div class="target"><span class="hi">'+(t.kind==="up"?"↑ ":"")+esc(t.text)+'</span><span>'+e.s+' × '+esc(e.r)+'</span><span>Rest '+fmtT(e.rest)+'</span></div>'+
-    (e.tip ? '<p class="cue">'+esc(e.tip)+'</p>' : '')+
-    '<div class="p-links"><a href="'+FORM_GUIDE+sess.day+'" target="_blank" rel="noopener">Form guide ↗</a><a href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.n+" proper form")+'" target="_blank" rel="noopener">Watch demo ↗</a></div>'+
+    howTo(e, !cur.some(x => x && x.done))+
     '<div class="sethead"><span style="text-align:center">Set</span><span style="text-align:center">Last</span><span style="text-align:center">'+unit+'</span><span style="text-align:center">Reps</span><span></span></div>';
   for(let s=0; s<e.s; s++){
     const c = cur[s] || {}, pv = le && le.sets[s], ts = t.sets[s];
@@ -693,6 +731,27 @@ function finish(){
     '<div class="kpi" style="grid-column:1/-1"><b class="d">'+Math.round(total).toLocaleString()+' '+unit+'</b><span>Total volume</span></div>';
   $("#summary").classList.add("open");
 }
+
+/* ---------- form guide (in-app, works offline) ---------- */
+const PLAY = '<svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" fill="currentColor"/></svg>';
+function howTo(e, open){
+  if(!e.c) return "";
+  return '<details class="how"'+(open?' open':'')+'><summary>How to do it</summary><ol>'+e.c.map(c => '<li>'+esc(c)+'</li>').join("")+'</ol>'+
+    (e.a ? '<p class="alt"><b>Taken or missing?</b> '+esc(e.a)+'</p>' : '')+
+    '<a class="demo" href="'+demoUrl(e)+'" target="_blank" rel="noopener">'+PLAY+'Watch demo</a></details>';
+}
+function openForm(day, idx){
+  const p = PLAN[day];
+  let h = '<div class="eyebrow">Form guide</div><h3 class="d" style="font-size:40px;margin:6px 0 4px">'+p.title+' day</h3>'+
+    '<p style="color:var(--muted);font-size:13px;margin:0 0 12px">Warm up 5 min, then 2–3 light ramp-up sets on exercise 1. Every working set 1–2 reps short of failure.</p>';
+  p.ex.forEach((e,i) => { h += '<div class="hx" id="fg'+i+'">'+(i+1)+'. '+esc(e.n)+' <span style="color:var(--muted);font-weight:500">· '+e.s+' × '+esc(e.r)+'</span></div>'+howTo(e, idx == null ? i === 0 : i === idx); });
+  h += '<div class="btnrow"><button class="pri" id="fClose">Close</button></div>';
+  $("#hCard").innerHTML = h; $("#hModal").classList.add("open"); $("#hCard").scrollTop = 0;
+  if(idx != null){ const t = document.getElementById("fg"+idx); if(t) $("#hCard").scrollTop = t.offsetTop - 16; }
+  $("#fClose").onclick = () => $("#hModal").classList.remove("open");
+}
+$("#formLink").onclick = ev => { ev.preventDefault(); openForm(sel); };
+$("#list").onclick = ev => { const r = ev.target.closest(".row[data-i]"); if(r) openForm(sel, +r.dataset.i); };
 
 /* ---------- history detail / edit ---------- */
 function openHist(d){
