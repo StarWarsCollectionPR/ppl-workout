@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Push Pull Legs</title>
+<meta name="description" content="A 6-day Push / Pull / Legs gym routine with set tracking, weight log and rest timer.">
+<meta name="theme-color" content="#111317">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8572a'/%3E%3Cpath d='M12 26h6v12h-6zM46 26h6v12h-6zM18 22h5v20h-5zM41 22h5v20h-5zM23 30h18v4H23z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4f1; --surface:#ffffff; --surface-2:#eeece8; --text:#16181c; --muted:#6a6f78;
+  --line:#dedbd5; --accent:#e8572a; --accent-soft:#fbe4db; --ok:#1f8a4c; --ok-soft:#dcf1e4;
+  --push:#e8572a; --pull:#2f6fdf; --legs:#1f8a4c;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111317; --surface:#1a1d23; --surface-2:#23272f; --text:#eceef2; --muted:#9aa1ad;
+    --line:#2c313a; --accent:#ff6a3d; --accent-soft:#3a2219; --ok:#3fbf73; --ok-soft:#173222;
+    --push:#ff6a3d; --pull:#5b93ff; --legs:#3fbf73; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#1a1d23; --surface-2:#23272f; --text:#eceef2; --muted:#9aa1ad;
+  --line:#2c313a; --accent:#ff6a3d; --accent-soft:#3a2219; --ok:#3fbf73; --ok-soft:#173222;
+  --push:#ff6a3d; --pull:#5b93ff; --legs:#3fbf73; --shadow:none;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 120px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 18px}
+h1{font-size:30px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.iconbtn{background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:10px;width:40px;height:40px;font-size:18px;cursor:pointer;flex:none}
+
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:18px}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 2px;text-align:center;font-size:11px;color:var(--muted)}
+.day b{display:block;font-size:13px;color:var(--text);margin-top:2px}
+.day.today{outline:2px solid var(--accent);outline-offset:-1px}
+.day[data-t="push"] b{color:var(--push)} .day[data-t="pull"] b{color:var(--pull)} .day[data-t="legs"] b{color:var(--legs)}
+
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--surface-2);padding:5px;border-radius:12px;position:sticky;top:8px;z-index:5}
+.tab{border:0;background:transparent;color:var(--muted);font:600 15px Inter,system-ui,sans-serif;padding:10px 4px;border-radius:9px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.tab[aria-selected="true"][data-k="push"]{color:var(--push)}
+.tab[aria-selected="true"][data-k="pull"]{color:var(--pull)}
+.tab[aria-selected="true"][data-k="legs"]{color:var(--legs)}
+
+.focus{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:18px 2px 10px;flex-wrap:wrap}
+.focus h2{margin:0;font-size:20px}
+.focus p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.progress{font-size:13px;color:var(--muted);white-space:nowrap}
+.bar{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:0 2px 16px}
+.bar i{display:block;height:100%;width:0;background:var(--c,var(--accent));transition:width .25s}
+
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.ex.done{border-color:var(--ok)}
+.ex-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.ex h3{margin:0;font-size:16px}
+.ex .meta{color:var(--muted);font-size:13px;margin-top:2px}
+.tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.sets{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.set{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface-2);color:var(--text);font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.set.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.wt{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+.wt input{width:72px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--text);font:600 15px Inter,system-ui,sans-serif;text-align:center;padding:0 6px}
+.tip{margin-top:10px;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:10px 14px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.notes{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.notes h2{font-size:16px;margin:0 0 8px}
+.notes ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px}
+.notes li{margin:4px 0}
+
+.timer{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));width:min(728px,calc(100% - 32px));background:var(--text);color:var(--bg);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.25);z-index:10}
+.timer .clock{font:800 26px Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;min-width:74px}
+.timer .lbl{font-size:12px;opacity:.7;flex:1;line-height:1.2}
+.timer button{border:0;border-radius:9px;padding:9px 11px;font:600 13px Inter,system-ui,sans-serif;cursor:pointer;background:rgba(127,127,127,.25);color:inherit}
+.timer button.go{background:var(--accent);color:#fff}
+.timer.ring{animation:pulse .5s 4}
+@keyframes pulse{50%{transform:translateX(-50%) scale(1.03)}}
+@media (max-width:420px){ h1{font-size:26px} .timer .lbl{display:none} .wt input{width:64px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Push · Pull · Legs</h1>
+      <div class="sub">6 days a week · tap a set when it's done</div>
+    </div>
+    <button class="iconbtn" id="theme" aria-label="Toggle dark mode">◐</button>
+  </header>
+
+  <div class="week" id="week"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-k="push">Push</button>
+    <button class="tab" role="tab" data-k="pull">Pull</button>
+    <button class="tab" role="tab" data-k="legs">Legs</button>
+  </div>
+
+  <div class="focus">
+    <div><h2 id="dTitle"></h2><p id="dSub"></p></div>
+    <div class="progress" id="prog"></div>
+  </div>
+  <div class="bar"><i id="barFill"></i></div>
+
+  <div id="list"></div>
+
+  <div class="actions">
+    <button class="btn" id="reset">Reset today's checkmarks</button>
+  </div>
+
+  <section class="notes">
+    <h2>How to run it</h2>
+    <ul>
+      <li><b>Progression:</b> when you hit the top of the rep range on every set, add weight next session (≈2.5 kg / 5 lb upper, 5 kg / 10 lb lower).</li>
+      <li><b>Effort:</b> finish most sets 1–2 reps shy of failure. Last set of isolation work can go to failure.</li>
+      <li><b>Warm-up:</b> 5 min light cardio, then 2–3 ramp-up sets on the first compound lift.</li>
+      <li><b>Rest:</b> 2–3 min on big compounds, 60–90 s on accessories. Use the timer below.</li>
+      <li>Your weights and checkmarks are saved on this device only.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="timer" id="timer">
+  <div class="clock" id="clock">1:30</div>
+  <div class="lbl">Rest timer</div>
+  <button data-s="60">1:00</button>
+  <button data-s="90">1:30</button>
+  <button data-s="180">3:00</button>
+  <button class="go" id="go">Start</button>
+</div>
+
+<script>
+const PLAN = {
+  push:{title:"Push", sub:"Chest · Shoulders · Triceps", ex:[
+    {n:"Barbell Bench Press", s:4, r:"5–8", g:"Chest", rest:180, tip:"Shoulder blades pinched, feet planted, bar touches lower chest."},
+    {n:"Overhead Press", s:3, r:"6–10", g:"Shoulders", rest:150, tip:"Squeeze glutes, press straight up and push your head through at lockout."},
+    {n:"Incline Dumbbell Press", s:3, r:"8–12", g:"Upper chest", rest:90},
+    {n:"Cable / Machine Fly", s:3, r:"12–15", g:"Chest", rest:60},
+    {n:"Lateral Raise", s:4, r:"12–20", g:"Side delts", rest:60, tip:"Lead with the elbows, stop around shoulder height."},
+    {n:"Triceps Rope Pushdown", s:3, r:"10–15", g:"Triceps", rest:60},
+    {n:"Overhead Triceps Extension", s:3, r:"10–15", g:"Triceps", rest:60}
+  ]},
+  pull:{title:"Pull", sub:"Back · Rear delts · Biceps", ex:[
+    {n:"Deadlift", s:3, r:"3–5", g:"Posterior chain", rest:180, tip:"Brace hard, bar over mid-foot, push the floor away. Swap for Rack Pulls on day 2."},
+    {n:"Pull-ups / Lat Pulldown", s:4, r:"6–10", g:"Lats", rest:120},
+    {n:"Barbell / Chest-supported Row", s:3, r:"8–12", g:"Mid back", rest:90},
+    {n:"Seated Cable Row", s:3, r:"10–12", g:"Mid back", rest:90},
+    {n:"Face Pull", s:3, r:"15–20", g:"Rear delts", rest:60, tip:"Pull to your forehead, rotate hands back at the end."},
+    {n:"Barbell / EZ Curl", s:3, r:"8–12", g:"Biceps", rest:60},
+    {n:"Hammer Curl", s:3, r:"10–15", g:"Biceps / forearms", rest:60}
+  ]},
+  legs:{title:"Legs", sub:"Quads · Hamstrings · Glutes · Calves", ex:[
+    {n:"Back Squat", s:4, r:"5–8", g:"Quads", rest:180, tip:"Brace, sit between your heels, knees track over toes."},
+    {n:"Romanian Deadlift", s:3, r:"8–10", g:"Hamstrings", rest:150, tip:"Soft knees, push hips back until you feel the hamstring stretch."},
+    {n:"Leg Press", s:3, r:"10–12", g:"Quads", rest:120},
+    {n:"Walking Lunge / Split Squat", s:3, r:"10 / leg", g:"Glutes", rest:90},
+    {n:"Leg Curl", s:3, r:"10–15", g:"Hamstrings", rest:60},
+    {n:"Standing Calf Raise", s:4, r:"10–15", g:"Calves", rest:60, tip:"Full stretch at the bottom, pause 1s at the top."},
+    {n:"Hanging Leg Raise", s:3, r:"10–15", g:"Core", rest:60}
+  ]}
+};
+const WEEK = ["push","pull","legs","push","pull","legs","rest"]; // Mon..Sun
+const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const today = new Date(); const dow = (today.getDay()+6)%7;
+const dateKey = today.toISOString().slice(0,10);
+
+// theme
+const root = document.documentElement;
+const savedTheme = store.get("ppl-theme", null);
+if(savedTheme) root.dataset.theme = savedTheme;
+document.getElementById("theme").onclick = () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark"; store.set("ppl-theme", root.dataset.theme);
+};
+
+// week strip
+const weekEl = document.getElementById("week");
+WEEK.forEach((t,i) => {
+  const d = document.createElement("div");
+  d.className = "day" + (i===dow ? " today" : ""); d.dataset.t = t;
+  d.innerHTML = DAYS[i] + "<b>" + (t==="rest" ? "Rest" : PLAN[t].title) + "</b>";
+  if(t!=="rest"){ d.style.cursor="pointer"; d.onclick = () => show(t); }
+  weekEl.appendChild(d);
+});
+
+let cur = WEEK[dow] === "rest" ? store.get("ppl-last","push") : WEEK[dow];
+let checks = store.get("ppl-checks", {});
+if(checks.date !== dateKey) checks = {date:dateKey};
+const weights = store.get("ppl-weights", {});
+
+function show(k){
+  cur = k; store.set("ppl-last", k);
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.k===k));
+  const p = PLAN[k];
+  document.getElementById("dTitle").textContent = p.title + " day";
+  document.getElementById("dSub").textContent = p.sub + (WEEK[dow]==="rest" ? " · today is a rest day" : "");
+  document.getElementById("barFill").style.setProperty("--c", "var(--"+k+")");
+  const list = document.getElementById("list"); list.innerHTML = "";
+  p.ex.forEach((e,i) => {
+    const id = k+"-"+i;
+    const card = document.createElement("article"); card.className = "ex";
+    card.innerHTML =
+      '<div class="ex-top"><div><h3></h3><div class="meta">'+e.s+' sets × '+e.r+' reps · rest '+fmt(e.rest)+'</div></div><span class="tag"></span></div>'+
+      '<div class="sets"></div>'+(e.tip ? '<div class="tip"></div>' : '');
+    card.querySelector("h3").textContent = e.n;
+    card.querySelector(".tag").textContent = e.g;
+    if(e.tip) card.querySelector(".tip").textContent = e.tip;
+    const sets = card.querySelector(".sets");
+    const on = checks[id] || [];
+    for(let s=0;s<e.s;s++){
+      const b = document.createElement("button");
+      b.className = "set" + (on[s] ? " on" : ""); b.textContent = s+1;
+      b.setAttribute("aria-label", "Set "+(s+1)+" of "+e.n);
+      b.onclick = () => {
+        const arr = checks[id] || (checks[id] = []);
+        arr[s] = !arr[s]; b.classList.toggle("on", arr[s]);
+        store.set("ppl-checks", checks); update();
+        if(arr[s]) startTimer(e.rest);
+      };
+      sets.appendChild(b);
+    }
+    const wt = document.createElement("label"); wt.className = "wt";
+    wt.innerHTML = 'kg/lb <input inputmode="decimal" placeholder="—">';
+    const inp = wt.querySelector("input"); inp.value = weights[id] || "";
+    inp.setAttribute("aria-label", "Working weight for "+e.n);
+    inp.oninput = () => { weights[id] = inp.value.trim(); store.set("ppl-weights", weights); };
+    sets.appendChild(wt);
+    list.appendChild(card);
+  });
+  update();
+}
+function update(){
+  const p = PLAN[cur]; let tot=0, done=0;
+  document.querySelectorAll(".ex").forEach((c,i) => {
+    const e = p.ex[i], on = (checks[cur+"-"+i]||[]).slice(0,e.s).filter(Boolean).length;
+    tot += e.s; done += on; c.classList.toggle("done", on===e.s);
+  });
+  document.getElementById("prog").textContent = done+" / "+tot+" sets";
+  document.getElementById("barFill").style.width = (tot ? done/tot*100 : 0)+"%";
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => show(t.dataset.k));
+document.getElementById("reset").onclick = () => {
+  PLAN[cur].ex.forEach((_,i) => delete checks[cur+"-"+i]);
+  store.set("ppl-checks", checks); show(cur);
+};
+
+// rest timer
+function fmt(s){ return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+let dur = 90, left = 90, tick = null;
+const clock = document.getElementById("clock"), go = document.getElementById("go"), timerEl = document.getElementById("timer");
+function render(){ clock.textContent = fmt(left); go.textContent = tick ? "Stop" : "Start"; }
+function startTimer(s){ dur = s || dur; left = dur; clearInterval(tick); tick = setInterval(step, 1000); render(); }
+function stopTimer(){ clearInterval(tick); tick = null; left = dur; render(); }
+function step(){
+  left--; if(left <= 0){ stopTimer(); beep(); timerEl.classList.remove("ring"); void timerEl.offsetWidth; timerEl.classList.add("ring"); return; }
+  render();
+}
+function beep(){
+  try{ navigator.vibrate && navigator.vibrate([200,100,200]); }catch(e){}
+  try{
+    const a = new (window.AudioContext||window.webkitAudioContext)();
+    [0,.25,.5].forEach(t => { const o=a.createOscillator(), g=a.createGain(); o.frequency.value=880; o.connect(g); g.connect(a.destination);
+      g.gain.setValueAtTime(.2,a.currentTime+t); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+t+.2); o.start(a.currentTime+t); o.stop(a.currentTime+t+.2); });
+  }catch(e){}
+}
+go.onclick = () => tick ? stopTimer() : startTimer(dur);
+document.querySelectorAll(".timer [data-s]").forEach(b => b.onclick = () => startTimer(+b.dataset.s));
+
+show(cur); render();
+</script>
+</body>
+</html>
