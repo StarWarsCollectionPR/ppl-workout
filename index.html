@@ -8,6 +8,10 @@
 <meta name="theme-color" content="#0b0b0c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PPL">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0b0c'/%3E%3Cpath d='M12 26h6v12h-6zM46 26h6v12h-6zM18 22h5v20h-5zM41 22h5v20h-5zM23 30h18v4H23z' fill='%23d7ff3a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -166,6 +170,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:26px 20px 20px;width:100%;max-width:420px;text-align:center}
 .card h3{font-size:48px;margin:6px 0 14px;font-weight:800}
 .card .kpis{margin-bottom:18px;text-align:left}
+.install{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:12px 14px;margin-bottom:14px;font-size:13px}
+.install img{width:40px;height:40px;border-radius:10px;flex:none}
+.install b{display:block;font-size:14px}
+.install span{color:var(--muted)}
+.install button{margin-left:auto;background:none;border:0;color:var(--muted);font-size:18px;padding:4px}
 @media (max-width:380px){ .hero h1{font-size:54px} .p-body h2{font-size:38px} .sethead,.set{grid-template-columns:36px 1fr 1fr 1fr 46px;gap:6px} }
 </style>
 </head>
@@ -178,6 +187,12 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="pill" id="unitBtn" aria-label="Switch weight unit">LB</button>
       <button class="pill" id="themeBtn" aria-label="Toggle light mode">◐</button>
     </div>
+  </div>
+
+  <div class="install" id="install" hidden>
+    <img src="apple-touch-icon.png" alt="">
+    <div><b>Install as an app</b><span>Tap Share <svg width="13" height="15" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 2v15M7 7l5-5 5 5M5 12H3v14h18V12h-2"/></svg> then "Add to Home Screen"</span></div>
+    <button id="installX" aria-label="Dismiss">✕</button>
   </div>
 
   <!-- WORKOUT VIEW -->
@@ -543,6 +558,15 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 
 function renderAll(){ renderHome(); if(!$("#vProg").hidden) renderProg(); }
 renderHome();
+
+/* ---------- install as app ---------- */
+const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+if(isIOS && !standalone && !store.get("ppl-install-x", false)) $("#install").hidden = false;
+$("#installX").onclick = () => { $("#install").hidden = true; store.set("ppl-install-x", true); };
+if("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+// persistent storage so iOS doesn't evict workout history
+try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
 </script>
 </body>
 </html>
